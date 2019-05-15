@@ -1,5 +1,11 @@
 #!/bin/bash -xe
 
-GOOS=linux go build -o fargate_entrypoint main.go
+GOOS=linux go build -o fargate_exporter main.go
 
-docker build --no-cache -t fargate_entrypoint .
+tag=mschurenko/fargate_exporter
+
+docker build --no-cache -t $tag .
+
+docker push $tag
+
+

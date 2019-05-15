@@ -1,9 +1,9 @@
-# fargate_entrypoint
+# fargate_exporter
 
 Exposes the following prometheus metrics:
-- fargate_overlay_disk_size
-- fargate_overlay_disk_free
-- fargate_overlay_disk_avail
+- <cluster>_<task_family>_<task_id>_fargate_overlay_disk_size
+- <cluster>_<task_family>_<task_id>_fargate_overlay_disk_free
+- <cluster>_<task_family>_<task_id>_fargate_overlay_disk_avail
 
 ## Usage:
 See `Dockerfile`

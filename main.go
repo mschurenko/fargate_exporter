@@ -1,17 +1,17 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"golang.org/x/sys/unix"
 
+	"github.com/mschurenko/fargate_exporter/utils"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -25,22 +25,41 @@ const (
 	mB      = 1024 * kB
 )
 
+func getMetaData() io.ReadCloser {
+	var err error
+	var resp *http.Response
+
+	uri := os.Getenv("ECS_CONTAINER_METADATA_URI")
+	if uri == "" {
+		fmt.Println("Are you in AWS?")
+		log.Fatalln("metadata: Are you even in AWS?")
+	}
+
+	resp, err = http.Get(uri + "/task")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return resp.Body
+}
+
 var (
+	prefix = utils.GetPrefix(getMetaData())
 	dfSize = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "fargate_overlay_disk_size",
+			Name: fmt.Sprintf("%s_fargate_overlay_disk_size", prefix),
 			Help: "disk size",
 		},
 	)
 	dfFree = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "fargate_overlay_disk_free",
+			Name: fmt.Sprintf("%s_fargate_overlay_disk_free", prefix),
 			Help: "disk free",
 		},
 	)
 	dfAvail = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "fargate_overlay_disk_avail",
+			Name: fmt.Sprintf("%s_fargate_overlay_disk_avail", prefix),
 			Help: "disk available",
 		},
 	)
@@ -48,10 +67,7 @@ var (
 
 // https://gitlab.cncf.ci/prometheus/node_exporter/blob/master/collector/filesystem_linux.go
 type diskStats struct {
-	size  int
-	free  int
-	avail int
-	used  int
+	size, free, avail, used int
 }
 
 func diskFree(path string) diskStats {
@@ -102,48 +118,6 @@ func dfBin(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-	execArgs := os.Args[1:]
-
-	log.Println("entrypoint arguments:", strings.Join(execArgs, " "))
-
-	if len(execArgs) == 0 {
-		log.Fatal("error: must have args to run")
-	}
-
-	cmdPath, err := exec.LookPath(execArgs[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go func() {
-		fmt.Println("going to start cmd")
-		cmd := exec.Command(cmdPath, execArgs[1:]...)
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal("stdout pipe error:", err)
-		}
-
-		scanner := bufio.NewScanner(stdout)
-		go func() {
-			for scanner.Scan() {
-				fmt.Printf("%s\n", scanner.Text())
-			}
-		}()
-
-		if err := cmd.Start(); err != nil {
-			log.Fatal("command error:", err)
-		}
-
-		if err := cmd.Wait(); err != nil {
-			log.Fatal(err)
-		}
-
-	}()
-
-	fmt.Println("got here")
-
-	// start prom endpoint
 	df()
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/df", dfBin)

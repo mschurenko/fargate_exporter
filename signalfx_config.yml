@@ -1,0 +1,11 @@
+signalFxAccessToken: ""
+intervalSeconds: 20
+
+logging:
+  level: debug
+
+monitors:
+ - type: prometheus-exporter
+   host: ""
+   port: 2112
+   metricPath: /metrics

@@ -1,5 +1,5 @@
-FROM ubuntu:18.04
+FROM alpine:latest
 
-COPY fargate_entrypoint /usr/local/bin/fargate_entrypoint
+COPY fargate_exporter /usr/local/bin/fargate_exporter
 
-ENTRYPOINT [ "/usr/local/bin/fargate_entrypoint" ]
+ENTRYPOINT [ "/usr/local/bin/fargate_exporter" ]
