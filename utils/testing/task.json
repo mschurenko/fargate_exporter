@@ -1,0 +1,141 @@
+{
+  "Cluster": "arn:aws:ecs:us-west-2:123456789012:cluster/microservices-testing",
+  "TaskARN": "arn:aws:ecs:us-west-2:123456789012:task/20c8a872-0311-4089-b1d4-bef05989f648",
+  "Family": "foo",
+  "Revision": "24",
+  "DesiredStatus": "RUNNING",
+  "KnownStatus": "RUNNING",
+  "Containers": [
+    {
+      "DockerId": "7a551fe14c232643b79333b562c5b913cff56e2f4544b73ff024111e3f8befaf",
+      "Name": "~internal~ecs~pause",
+      "DockerName": "ecs-foo-24-internalecspause-eeb59cf9c89ce38a4a00",
+      "Image": "fg-proxy:tinyproxy",
+      "ImageID": "",
+      "Labels": {
+        "com.amazonaws.ecs.cluster": "arn:aws:ecs:us-west-2:123456789012:cluster/microservices-testing",
+        "com.amazonaws.ecs.container-name": "~internal~ecs~pause",
+        "com.amazonaws.ecs.task-arn": "arn:aws:ecs:us-west-2:123456789012:task/20c8a872-0311-4089-b1d4-bef05989f648",
+        "com.amazonaws.ecs.task-definition-family": "foo",
+        "com.amazonaws.ecs.task-definition-version": "24"
+      },
+      "DesiredStatus": "RESOURCES_PROVISIONED",
+      "KnownStatus": "RESOURCES_PROVISIONED",
+      "Limits": {
+        "CPU": 0,
+        "Memory": 0
+      },
+      "CreatedAt": "2019-05-17T21:39:20.342519061Z",
+      "StartedAt": "2019-05-17T21:39:20.770101999Z",
+      "Type": "CNI_PAUSE",
+      "Networks": [
+        {
+          "NetworkMode": "awsvpc",
+          "IPv4Addresses": [
+            "10.0.3.238"
+          ]
+        }
+      ]
+    },
+    {
+      "DockerId": "d2ddaf2c7c34d606f6f5f5854ea5767187ca69dda25b855a466d98da06feb450",
+      "Name": "exporter",
+      "DockerName": "ecs-foo-24-exporter-f6aca0ecc49dea8c2f00",
+      "Image": "mschurenko/fargate_exporter:latest",
+      "ImageID": "sha256:998403269feaa66872b1bc50f03a9976de2722b52be179980d10c0e3cf6548c1",
+      "Labels": {
+        "com.amazonaws.ecs.cluster": "arn:aws:ecs:us-west-2:123456789012:cluster/microservices-testing",
+        "com.amazonaws.ecs.container-name": "exporter",
+        "com.amazonaws.ecs.task-arn": "arn:aws:ecs:us-west-2:123456789012:task/20c8a872-0311-4089-b1d4-bef05989f648",
+        "com.amazonaws.ecs.task-definition-family": "foo",
+        "com.amazonaws.ecs.task-definition-version": "24",
+        "fargateExporterPort": "2112"
+      },
+      "DesiredStatus": "RUNNING",
+      "KnownStatus": "RUNNING",
+      "Limits": {
+        "CPU": 0,
+        "Memory": 0
+      },
+      "CreatedAt": "2019-05-17T21:39:29.413470974Z",
+      "StartedAt": "2019-05-17T21:39:37.496723954Z",
+      "Type": "NORMAL",
+      "Networks": [
+        {
+          "NetworkMode": "awsvpc",
+          "IPv4Addresses": [
+            "10.0.3.238"
+          ]
+        }
+      ]
+    },
+    {
+      "DockerId": "8991fb337b52d33a299a1fa3290e741a7f2b736ce5201d640ca7b21ea3602e1d",
+      "Name": "gotty",
+      "DockerName": "ecs-foo-24-gotty-fabeded7f2d9ab998d01",
+      "Image": "jlpz/gotty:2.0.0-alpha.3-centos",
+      "ImageID": "sha256:a778631d7489a986b86178bcc06971ab997002e8e4df79c8f70bfda64d33f97f",
+      "Labels": {
+        "com.amazonaws.ecs.cluster": "arn:aws:ecs:us-west-2:123456789012:cluster/microservices-testing",
+        "com.amazonaws.ecs.container-name": "gotty",
+        "com.amazonaws.ecs.task-arn": "arn:aws:ecs:us-west-2:123456789012:task/20c8a872-0311-4089-b1d4-bef05989f648",
+        "com.amazonaws.ecs.task-definition-family": "foo",
+        "com.amazonaws.ecs.task-definition-version": "24"
+      },
+      "DesiredStatus": "RUNNING",
+      "KnownStatus": "RUNNING",
+      "Limits": {
+        "CPU": 0,
+        "Memory": 0
+      },
+      "CreatedAt": "2019-05-17T21:39:40.628658544Z",
+      "StartedAt": "2019-05-17T21:39:43.58852525Z",
+      "Type": "NORMAL",
+      "Networks": [
+        {
+          "NetworkMode": "awsvpc",
+          "IPv4Addresses": [
+            "10.0.3.238"
+          ]
+        }
+      ]
+    },
+    {
+      "DockerId": "b2cdf7287f0cd14ce8baa7b8900e34af2a02c5b0792cbd9ed8a59fe23fc5755e",
+      "Name": "foo",
+      "DockerName": "ecs-foo-24-foo-a8a0f8cdb4c190b57000",
+      "Image": "123456789012.dkr.ecr.us-west-2.amazonaws.com/princexml:latest",
+      "ImageID": "sha256:302a3a6d385d55f3bec3210ba85880b8f1cef4c2bbb02ba3c851110fe5112e1a",
+      "Labels": {
+        "com.amazonaws.ecs.cluster": "arn:aws:ecs:us-west-2:123456789012:cluster/microservices-testing",
+        "com.amazonaws.ecs.container-name": "foo",
+        "com.amazonaws.ecs.task-arn": "arn:aws:ecs:us-west-2:123456789012:task/20c8a872-0311-4089-b1d4-bef05989f648",
+        "com.amazonaws.ecs.task-definition-family": "foo",
+        "com.amazonaws.ecs.task-definition-version": "24"
+      },
+      "DesiredStatus": "RUNNING",
+      "KnownStatus": "RUNNING",
+      "Limits": {
+        "CPU": 0,
+        "Memory": 0
+      },
+      "CreatedAt": "2019-05-17T21:39:50.635986368Z",
+      "StartedAt": "2019-05-17T21:39:53.244930563Z",
+      "Type": "NORMAL",
+      "Networks": [
+        {
+          "NetworkMode": "awsvpc",
+          "IPv4Addresses": [
+            "10.0.3.238"
+          ]
+        }
+      ]
+    }
+  ],
+  "Limits": {
+    "CPU": 1,
+    "Memory": 2048
+  },
+  "PullStartedAt": "2019-05-17T21:39:20.910356611Z",
+  "PullStoppedAt": "2019-05-17T21:39:50.626453029Z"
+}

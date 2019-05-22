@@ -1,15 +1,9 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"os"
-	"os/exec"
 	"time"
-
-	"golang.org/x/sys/unix"
 
 	"github.com/mschurenko/fargate_exporter/utils"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,107 +13,115 @@ import (
 )
 
 const (
-	volPath = "/"
-	dfSleep = 2
-	kB      = 1024
-	mB      = 1024 * kB
+	// set to something lower than scrape interval
+	collectSleep = 5
 )
-
-func getMetaData() io.ReadCloser {
-	var err error
-	var resp *http.Response
-
-	uri := os.Getenv("ECS_CONTAINER_METADATA_URI")
-	if uri == "" {
-		fmt.Println("Are you in AWS?")
-		log.Fatalln("metadata: Are you even in AWS?")
-	}
-
-	resp, err = http.Get(uri + "/task")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return resp.Body
-}
 
 var (
-	prefix = utils.GetPrefix(getMetaData())
-	dfSize = promauto.NewGauge(
+	// task metrics
+	taskLabels = []string{
+		"cluster_name",
+		"task_family",
+		"task_id",
+	}
+	dfSize = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%s_fargate_overlay_disk_size", prefix),
+			Name: "fargate_overlay_disk_size",
 			Help: "disk size",
 		},
+		taskLabels,
 	)
-	dfFree = promauto.NewGauge(
+	dfFree = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%s_fargate_overlay_disk_free", prefix),
+			Name: "fargate_overlay_disk_free",
 			Help: "disk free",
 		},
+		taskLabels,
 	)
-	dfAvail = promauto.NewGauge(
+	dfAvail = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%s_fargate_overlay_disk_avail", prefix),
+			Name: "fargate_overlay_disk_avail",
 			Help: "disk available",
 		},
+		taskLabels,
+	)
+
+	// container metrics
+	containerLabels = append(taskLabels, []string{"container_name"}...)
+
+	totalCPU = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "fargate_cpu_usage_total",
+			Help: "Total CPU time consumed",
+		},
+		containerLabels,
+	)
+	systemCPU = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "fargate_cpu_usage_system",
+			Help: "System Usage",
+		},
+		containerLabels,
+	)
+
+	memoryLimit = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "fargate_memory_limit",
+			Help: "number of times memory usage hits limits",
+		},
+		containerLabels,
+	)
+	memoryUsage = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "fargate_memory_usage",
+			Help: "current res_counter usage for memory",
+		},
+		containerLabels,
 	)
 )
 
-// https://gitlab.cncf.ci/prometheus/node_exporter/blob/master/collector/filesystem_linux.go
-type diskStats struct {
-	size, free, avail, used int
-}
+func collectDiskFree() {
+	for {
+		ds := utils.GetDiskStats("/")
 
-func diskFree(path string) diskStats {
-	fs := unix.Statfs_t{}
-	err := unix.Statfs(path, &fs)
-	if err != nil {
-		log.Println(err)
-	}
-
-	ds := diskStats{}
-
-	ds.size = int(float64(fs.Blocks) * float64(fs.Bsize) / mB)
-	ds.free = int(float64(fs.Bfree) * float64(fs.Bsize) / mB)
-	ds.avail = int(float64(fs.Bavail) * float64(fs.Bsize) / mB)
-	// ds.used = int((float64(fs.Blocks) - float64(fs.Bavail)) / gB)
-	fmt.Printf("size: %v\n", ds.size)
-	fmt.Printf("free: %v\n", ds.free)
-	fmt.Printf("avail: %v\n", ds.avail)
-	// fmt.Printf("used: %v\n", ds.used)
-	return ds
-}
-
-func df() {
-	go func() {
-		for {
-			ds := diskFree(volPath)
-			dfSize.Set(float64(ds.size))
-			dfFree.Set(float64(ds.free))
-			dfAvail.Set(float64(ds.avail))
-			time.Sleep(time.Second * dfSleep)
+		labels := []string{
+			ds.ClusterName,
+			ds.Family,
+			ds.TaskID,
 		}
-	}()
+
+		dfSize.WithLabelValues(labels...).Set(float64(ds.Size))
+		dfFree.WithLabelValues(labels...).Set(float64(ds.Free))
+		dfAvail.WithLabelValues(labels...).Set(float64(ds.Avail))
+
+		time.Sleep(time.Second * collectSleep)
+	}
 }
 
-func dfBin(w http.ResponseWriter, r *http.Request) {
-	cmdPath, err := exec.LookPath("df")
-	if err != nil {
-		log.Fatal(err)
-	}
+func collectContainerStats() {
+	for {
+		cs := utils.GetContainerStats()
 
-	cmd := exec.Command(cmdPath, "-B", "M")
+		for _, c := range cs {
+			labels := []string{
+				c.ClusterName,
+				c.Family,
+				c.TaskID,
+				c.ContainerName,
+			}
+			totalCPU.WithLabelValues(labels...).Set(float64(c.TotalCPU))
+			systemCPU.WithLabelValues(labels...).Set(float64(c.SystemCPU))
+			memoryUsage.WithLabelValues(labels...).Set(float64(c.MemoryUsage))
+			memoryLimit.WithLabelValues(labels...).Set(float64(c.MemoryLimit))
+		}
 
-	bs, err := cmd.Output()
-	if err != nil {
-		log.Fatal(err)
+		time.Sleep(time.Second * collectSleep)
 	}
-	fmt.Fprintf(w, "%s\n", string(bs))
 }
 
 func main() {
-	df()
+	go collectDiskFree()
+	go collectContainerStats()
 	http.Handle("/metrics", promhttp.Handler())
-	http.HandleFunc("/df", dfBin)
-	http.ListenAndServe(":2112", nil)
+	log.Fatal(http.ListenAndServe(":2112", nil))
 }
